@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            background-color: #e6f7ff;
+            color: #4a4a4a;
+            line-height: 1.6;
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #e6f7ff;
+            /* border-radius: 15px; */
+            /* box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); */
+            text-align: center;
+        }
+
+        h1 {
+            color: #d82231;
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #66f513;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            width: 250px;
+            padding: 12px 18px;
+            font-size: 1.1rem;
+            border: 2px solid #76c7c0;
+            border-radius: 8px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #3a8d7c;
+        }
+
+        .input-group button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            background-color: #76c7c0;
+            color: rgb(252, 244, 244);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .input-group button:hover {
+            background-color: #3a8d7c;
+        }
+
+        .weather-info {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #c5408e;
+        }
+
+        .weather-info img {
+            width: 90px;
+            height: 90px;
+        }
+
+        .error {
+            color: #e63946;
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        .saved-cities {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .saved-cities ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .saved-cities li {
+            background-color: #cccccc;
+            margin: 12px 0;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .saved-cities li:hover {
+            background-color: #e6e6e6;
+        }
+
+        .saved-cities button {
+            padding: 8px 16px;
+            background-color: #e63946;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .saved-cities button:hover {
+            background-color: #c52b2b;
+        }
+
+        .toggle-btn {
+            padding: 12px 18px;
+            background-color: #56b6c2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background-color: #3a8d7c;
+        }
+
+        body.dark-mode {
+            background-color: #2f2f2f;
+            color: #e6e6e6;
+        }
+
+        .dark-mode .container {
+            background-color: #393939;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-mode .input-group input {
+            border-color: #444;
+            color: #e6e6e6;
+            background-color: #222;
+        }
+
+        .dark-mode .input-group button {
+            background-color: #3a8d7c;
+        }
+
+        .dark-mode .saved-cities li {
+            background-color: #444;
+        }
+
+        .dark-mode .saved-cities button {
+            background-color: #e63946;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .input-group input,
+            .input-group button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="toggle-btn" id="toggle-mode">🌙</button>
+
+    <div class="container">
+        <h1>Weather App</h1>
+        <div class="input-group">
+            <input type="text" id="city" placeholder="Enter city name">
+            <button id="get-weather">Get Weather</button>
+        </div>
+        <div class="weather-info" id="weather-info"></div>
+        <p class="error" id="error"></p>
+
+        <div class="saved-cities">
+            <h2>Saved Cities</h2>
+            <ul id="cities-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '985a46e41d1ef41434b8ceb42b0319c5';
+        const cityInput = document.getElementById('city');
+        const errorElement = document.getElementById('error');
+        const weatherInfo = document.getElementById('weather-info');
+        const citiesList = document.getElementById('cities-list');
+        const toggleModeButton = document.getElementById('toggle-mode');
+
+        let savedCities = JSON.parse(localStorage.getItem('savedCities')) || [];
+
+        displaySavedCities();
+
+        document.getElementById('get-weather').addEventListener('click', async () => {
+            const city = cityInput.value;
+
+            errorElement.textContent = '';
+            weatherInfo.innerHTML = '';
+
+            if (!city) {
+                errorElement.textContent = 'Please enter a city name.';
+                return;
+            }
+
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayWeather(data);
+                    if (!savedCities.includes(city)) {
+                        savedCities.push(city);
+                        localStorage.setItem('savedCities', JSON.stringify(savedCities));
+                        displaySavedCities();
+                    }
+                } else {
+                    errorElement.textContent = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                errorElement.textContent = 'Failed to fetch weather data. Please try again later.';
+                console.error(error);
+            }
+        });
+
+        function displayWeather(data) {
+            weatherInfo.innerHTML = `
+                <h2>${data.name}</h2>
+                <p>Temperature: ${data.main.temp}&#8451;</p>
+                <p>Condition: ${data.weather[0].description}</p>
+                <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Weather Icon">
+            `;
+        }
+
+        function displaySavedCities() {
+            citiesList.innerHTML = '';
+            savedCities.forEach(city => {
+                const li = document.createElement('li');
+                li.innerHTML = `${city} <button onclick="removeCity('${city}')">Remove</button>`;
+                citiesList.appendChild(li);
+            });
+        }
+
+        function removeCity(city) {
+            savedCities = savedCities.filter(savedCity => savedCity !== city);
+            localStorage.setItem('savedCities', JSON.stringify(savedCities));
+            displaySavedCities();
+        }
+
+        toggleModeButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const modeIcon = document.body.classList.contains('dark-mode') ? '🌞' : '🌙';
+            toggleModeButton.textContent = modeIcon;
+        });
+    </script>
+</body>
+
+</html>
